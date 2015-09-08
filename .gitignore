@@ -3,3 +3,5 @@ project/target/
 project/project/target/
 target/
 src/test/resources/file-conf.yml
+src/test/resources/message.yml
+src/test/resources/file-dest.csv

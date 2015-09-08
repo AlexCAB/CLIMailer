@@ -1,20 +1,17 @@
 package main;
 import com.sun.mail.util.BASE64EncoderStream;
 import org.apache.commons.csv.CSVRecord;
-import org.dom4j.Element;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.mail.BodyPart;
-import javax.mail.Multipart;
 import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 
 /**
@@ -22,23 +19,34 @@ import java.util.List;
  * Created by CAB on 04.09.2015.
  */
 
-
 public class MailBuilder {
 
-    List<MimeBodyPart> attachmentsList = new ArrayList<MimeBodyPart>();
-    String messageBody;
-    String subject;
+    //Variables
 
+    private List<MimeBodyPart> attachmentsList = new ArrayList<MimeBodyPart>();
+    private String messageTemplate;
+    private String from;
+    private String subject;
+    private String replayTo;
 
-    public MailBuilder(Element messageFile, Element configuration) throws Exception {
-        //Get message body and subject
-        String bodyFilename = messageFile.element("body").getText();
-        messageBody = new String(Files.readAllBytes(Paths.get(bodyFilename)));
-        subject = configuration.element("sender").element("subject").getText();
+    //Methods
+
+    /**
+     * Constructor
+     * @param message - message parameters map (from '-m').
+     * @throws Exception
+     */
+    public MailBuilder(Map<String,Object> message) throws Exception {
+        //Get message template
+        String templatePath = (String)((Map<String, Object>) message.get("content")).get("file");
+        messageTemplate = new Scanner(new File(templatePath)).useDelimiter("\\Z").next();
+        Map<String, Object> sender = (Map<String, Object>) message.get("sender");
+        from = (String) sender.get("email");
+        subject = (String) sender.get("subject");
+        replayTo = (String) sender.get("replayTo");
         //Get and prepare attachments
-        List<Element> elements = messageFile.elements("attachment");
-        for(Element attachment : elements){
-            String filename = attachment.element("file").getText();
+        List<String> attachments = (List<String>)message.get("attachments");
+        for(String filename : attachments){
             MimeBodyPart attachmentBodyPart = new MimeBodyPart();
             DataSource source = new FileDataSource(filename);
             attachmentBodyPart.setDataHandler(new DataHandler(source));
@@ -47,67 +55,68 @@ public class MailBuilder {
         }
     }
 
-
-    public Multipart buildMailForSand(CSVRecord record) throws Exception{
-        Multipart multipart = new MimeMultipart();
+    /**
+     * Build mail for sending.
+     * @param record - recipients data line (from '-d')
+     * @return - built email.
+     * @throws Exception
+     */
+    public MimeMultipart buildMailForSand(CSVRecord record) throws Exception{
+        MimeMultipart multipart = new MimeMultipart();
         //Build and add message
         BodyPart messageBodyPart = new MimeBodyPart();
-        messageBodyPart.setHeader("Content-Type", "text/html");
-        messageBodyPart.setText(buildEmailBody(record));
+        messageBodyPart.setContent(buildEmailBody(record), "text/html; charset=utf-8");
         multipart.addBodyPart(messageBodyPart);
         //Add attachment
         for(MimeBodyPart attachment : attachmentsList){
             multipart.addBodyPart(attachment);
         }
-
         return multipart;
     }
 
-
+    /**
+     * Build mail for saving as '*.eml' file.
+     * @param record - recipients data line (from '-d')
+     * @return - serialized email.
+     * @throws Exception
+     */
     public String buildMailForSave(CSVRecord record) throws Exception{
-        //Body
-        StringBuilder sb = new StringBuilder(buildEmailBody(record));
+        StringBuilder sb = new StringBuilder();
+        //Params
+        sb.append("From:      "); sb.append(from); sb.append("\n");
+        sb.append("To:        "); sb.append(record.get(0)); sb.append("\n");
+        sb.append("Subject:   "); sb.append(subject); sb.append("\n");
+        sb.append("Replay to: "); sb.append(replayTo); sb.append("\n");
         sb.append("\n\n");
+        //Body
+        sb.append(buildEmailBody(record));
+        sb.append("\n\n\n");
         //Attachments
         for(MimeBodyPart attachment : attachmentsList){
             OutputStream bos = new ByteArrayOutputStream();
             OutputStream eos = new BASE64EncoderStream(bos);
             attachment.writeTo(eos);
+            sb.append("Attachment: "); sb.append(attachment.getFileName()); sb.append("\n");
             sb.append(bos);
             sb.append("\n\n");
         }
         return sb.toString();
     }
 
+    //Functions
+
     private String buildEmailBody(CSVRecord record){
-        StringBuilder sb = new StringBuilder();
-//        sb.append("<html>\n");
-//        sb.append("  <head>\n");
-//        sb.append("    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n");
-//        sb.append("    <title>"); sb.append(subject); sb.append("</title>\n");
-//        sb.append("  </head>\n");
-//        sb.append("  <body>\n");
-//        sb.append(record.get(0)); //salutation
-//        sb.append(" ");
-//        sb.append(record.get(1)); //name
-//        sb.append(" ");
-//        sb.append(record.get(2)); //surname
-//        sb.append("\n");
-//        sb.append(record.get(3)); //email
-//        sb.append("\n");
-//        sb.append(record.get(4)); //company
-//        sb.append(", ");
-//        sb.append(record.get(5)); //address
-//        sb.append(" ");
-//        sb.append(record.get(6)); //zip
-//        sb.append(" ");
-//        sb.append(record.get(7)); //city
-//        sb.append(" ");
-//        sb.append(record.get(8)); //state
-//        sb.append("\n");
-        sb.append(messageBody);
-//        sb.append("  </body>\n");
-//        sb.append("</html>");
+        StringBuffer sb = new StringBuffer(messageTemplate);
+        for(int i = 0; i < record.size(); i += 1){
+            String from = "@" + i + "@";
+            String to = record.get(i);
+            int j = sb.indexOf(from);
+            while(j != -1){
+                sb.replace(j, j + from.length(), to);
+                j += to.length();
+                j = sb.indexOf(from, j);
+            }
+        }
         return sb.toString();
     }
 }

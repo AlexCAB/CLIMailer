@@ -3,10 +3,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.util.Calendar;
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
-import javax.mail.Multipart;
+import java.util.Map;
+import javax.mail.internet.MimeMultipart;
+import org.yaml.snakeyaml.Yaml;
 
 
 /**
@@ -23,14 +22,14 @@ public class Mailer {
             Reader destinationFile = new FileReader(parameters.getOptionValue("d"));
             Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(destinationFile);
             //Load message and configuration
-            SAXReader reader = new SAXReader();
-            Document messageDocument = reader.read(parameters.getOptionValue("m"));
-            Element message = messageDocument.getRootElement();
-            Document configurationDocument = reader.read(parameters.getOptionValue("c"));
-            Element configuration = configurationDocument.getRootElement();
+            Yaml yaml =  new Yaml();
+            Map<String,Object> configuration =
+                    (Map<String,Object>) yaml.load(new FileInputStream(parameters.getOptionValue("c")));
+            Map<String,Object> message =
+                    (Map<String,Object>) yaml.load(new FileInputStream(parameters.getOptionValue("m")));
             //Create helpers
-            MailBuilder mailBuilder = new MailBuilder(message, configuration);
-            MailSender mailSender = new MailSender(configuration);
+            MailBuilder mailBuilder = new MailBuilder(message);
+            MailSender mailSender = new MailSender(configuration, message);
             //Get index
             int index;
             if(parameters.getOptionValue("i") == null){
@@ -52,14 +51,14 @@ public class Mailer {
                  }
                  else{
                      if(parameters.getOptionValue("o").equals("s")){
-                         Multipart sendContent = mailBuilder.buildMailForSand(r);
+                         MimeMultipart sendContent = mailBuilder.buildMailForSand(r);
                          //Sending
-                         mailSender.sendMail(r.get(3), sendContent);
+                         mailSender.sendMail(r.get(0), sendContent);
                      }
                      else{
                          //Saving
                          String saveContent = mailBuilder.buildMailForSave(r);
-                         String filename = r.get(1) + "_" + r.get(2) + "_" + date + ".eml";
+                         String filename = r.get(0).replace("@","_").replace(".","_") + "_" + date + ".eml";
                          PrintWriter out = new PrintWriter(filename);
                          out.println(saveContent);
                          out.close();

@@ -27,6 +27,8 @@ public class CLIParameters {
         checkOptions();
     }
 
+    //Methods
+
     /**
      * Get command line value.
      * @param key - command key.
@@ -35,6 +37,8 @@ public class CLIParameters {
     public String getOptionValue(String key){
         return cmd.getOptionValue(key);
     }
+
+    //Functions
 
     private Options buildOptions(){
         Options options = new Options();
