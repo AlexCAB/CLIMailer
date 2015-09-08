@@ -1,0 +1,9 @@
+<message>
+    <body>body.html</body>
+    <attachment>
+        <file>Mailer.pdf</file>
+    </attachment>
+    <attachment>
+        <file>java.gif</file>
+    </attachment>
+</message>
