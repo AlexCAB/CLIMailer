@@ -1,8 +1,6 @@
 package main;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
+
 import java.io.File;
 
 
@@ -13,7 +11,12 @@ import java.io.File;
 
 public class CLIParameters {
 
+    //Variables
+
+    private Options options;
     private CommandLine cmd;
+    private String usage = "[java -jar target/mailer.jar|mailer] [OPTIONS]";
+    private HelpFormatter helpFormatter = new HelpFormatter();
 
     /**
      * Parse and check given args.
@@ -21,7 +24,14 @@ public class CLIParameters {
      * @throws Exception - on parsing error or incorrect parameter.
      */
     public CLIParameters(String[] args) throws Exception{
-        Options options = buildOptions();
+        //Options
+        options = buildOptions();
+        //If command line is empty print help
+        if(args.length == 0){
+            helpFormatter.printHelp(usage, options);
+            System.exit(-1);
+        }
+        //Parse options and check
         CommandLineParser parser = new DefaultParser();
         cmd = parser.parse(options, args);
         checkOptions();
@@ -43,19 +53,26 @@ public class CLIParameters {
     private Options buildOptions(){
         Options options = new Options();
         options.addOption("o", "output", true,
-                "If “s” the tool sends emails. If “d” the tool saves for every recipient a eml file.");
+                "If “s” the tool sends emails. If “d” the tool saves for every recipient a eml file (mandatory).");
         options.addOption("d", "destination", true,
-                "Path to the file containing the list of recipients");
+                "Path to the file containing the list of recipients (mandatory).");
         options.addOption("i", "index", true,
                 "The first recipient to start from N. Default = 1");
         options.addOption("c", "configuration", true,
-                "Path to the file containing the configuration info.");
+                "Path to the file containing the configuration info (mandatory).");
         options.addOption("m", "message", true,
-                "Path to the file containing the message information.");
+                "Path to the file containing the message information (mandatory).");
+        options.addOption("h", "help", false,
+                "Print this message.");
         return options;
     }
 
     private void checkOptions() throws IllegalArgumentException{
+        //If help print and exit
+        if(cmd.hasOption("h")){
+            helpFormatter.printHelp(usage, options);
+            System.exit(0);
+        }
         //Output
         String output = cmd.getOptionValue("o");
         if(output == null || !(output.equals("s") ||  output.equals("d")))
