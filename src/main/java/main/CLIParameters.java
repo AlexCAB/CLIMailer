@@ -86,11 +86,13 @@ public class CLIParameters {
             throw new IllegalArgumentException("File '" + destination + "' not exists or is directory.");
         //Destination
         String configuration  = cmd.getOptionValue("c");
-        if(configuration == null)
+        if(configuration == null && output.equals("s"))
             throw new IllegalArgumentException("No or incorrect -configuration argument.");
-        File configurationFile = new File(configuration);
-        if(! configurationFile.exists() || configurationFile.isDirectory())
-            throw new IllegalArgumentException("File '" + configuration + "' not exists or is directory.");
+        if(output.equals("s")) {
+            File configurationFile = new File(configuration);
+            if (!configurationFile.exists() || configurationFile.isDirectory())
+                throw new IllegalArgumentException("File '" + configuration + "' not exists or is directory.");
+        }
         //Message
         String message = cmd.getOptionValue("m");
         if(message == null)

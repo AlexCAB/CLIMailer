@@ -7,8 +7,8 @@ _DO_NOT_USE_IT_FOR_A_SPAMMING_
 
 GET AND BUILD
 
-Install SBT from: http://www.scala-sbt.org
-Go to folder where you like to install program, open command prompt and run next commands:
+Install Git from https://git-scm.com and SBT from http://www.scala-sbt.org (if you haven't yet).
+Navigate to the folder where you like to install program, open command prompt and run next commands:
 ```
     git clone https://github.com/AlexCAB/CLIMailer
     cd CLIMailer
@@ -22,8 +22,8 @@ COMMAND LINE
 Program take four mandatory arguments:
 ```
   -o (-output)        -- If “s” the tool sends emails. If “d” the tool saves for every recipient a *.eml file.
+  -c (-configuration) -- Path to the file containing the configuration info (mandatory only if -o == s).
   -d (-destination)   -- Path to the file containing the list of recipients.
-  -c (-configuration) -- Path to the file containing the configuration info.
   -m (-message)       -- Path to the file containing the message information.
 ```    
 And one not mandatory arguments:
@@ -51,9 +51,9 @@ CONFIGURATION FILE
 Is a YAML file, which contain mail server parameters, example for the Gmail: 
 ```
 server:
-  hostCONFI:  smtp.gmail.com
-  port:  465
-  user:  <user>
+  host: smtp.gmail.com
+  port: 465
+  user: <user>
   passw: <password>
 ```
     
@@ -63,8 +63,8 @@ MESSAGE FILE
 Also is a YAML file, which contain message parameters, example:
 ```
 sender:
-  email:    mail1@gmail.com
-  subject:  Test message.
+  email: mail1@gmail.com
+  subject: Test message.
   replayTo: mail2@gmail.com
   cc:
     - mail3@gmail.com

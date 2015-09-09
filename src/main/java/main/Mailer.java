@@ -23,13 +23,16 @@ public class Mailer {
             Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(destinationFile);
             //Load message and configuration
             Yaml yaml =  new Yaml();
-            Map<String,Object> configuration =
-                    (Map<String,Object>) yaml.load(new FileInputStream(parameters.getOptionValue("c")));
+            Map<String,Object> configuration = null;
+            if(parameters.getOptionValue("o").equals("s"))
+                configuration = (Map<String,Object>) yaml.load(new FileInputStream(parameters.getOptionValue("c")));
             Map<String,Object> message =
                     (Map<String,Object>) yaml.load(new FileInputStream(parameters.getOptionValue("m")));
             //Create helpers
             MailBuilder mailBuilder = new MailBuilder(message);
-            MailSender mailSender = new MailSender(configuration, message);
+            MailSender mailSender = null;
+            if(parameters.getOptionValue("o").equals("s"))
+                mailSender = new MailSender(configuration, message);
             //Get index
             int index;
             if(parameters.getOptionValue("i") == null){
